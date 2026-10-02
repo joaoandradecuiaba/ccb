@@ -1,0 +1,80 @@
+<section class="card">
+  <h2>{{ editingId() === null ? 'Nova tarefa' : 'Editar tarefa #' + editingId() }}</h2>
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <label>
+      Título
+      <input formControlName="title" placeholder="O que precisa ser feito?" />
+    </label>
+    @if (form.controls.title.touched && form.controls.title.invalid) {
+      <small class="field-error">Informe um título (até 200 caracteres).</small>
+    }
+
+    <label>
+      Descrição
+      <textarea formControlName="description" rows="3" placeholder="Detalhes (opcional)"></textarea>
+    </label>
+
+    <label>
+      Status
+      <select formControlName="status">
+        @for (s of statuses; track s) {
+          <option [value]="s">{{ labels[s] }}</option>
+        }
+      </select>
+    </label>
+
+    <div class="actions">
+      <button type="submit" class="primary">{{ editingId() === null ? 'Adicionar' : 'Salvar' }}</button>
+      @if (editingId() !== null) {
+        <button type="button" (click)="cancelEdit()">Cancelar</button>
+      }
+    </div>
+  </form>
+</section>
+
+@if (error()) {
+  <div class="alert" role="alert">{{ error() }}</div>
+}
+
+<nav class="filters" aria-label="Filtrar por status">
+  <button [class.active]="filter() === 'all'" (click)="filter.set('all')">Todas ({{ counts().all }})</button>
+  @for (s of statuses; track s) {
+    <button [class.active]="filter() === s" (click)="filter.set(s)">{{ labels[s] }} ({{ counts()[s] }})</button>
+  }
+</nav>
+
+@if (loading()) {
+  <p class="muted">Carregando...</p>
+} @else {
+  <ul class="task-list">
+    @for (task of visibleTasks(); track task.id) {
+      <li class="card task" [class.done]="task.status === 'done'">
+        <div class="task-main">
+          <h3>{{ task.title }}</h3>
+          @if (task.description) {
+            <p>{{ task.description }}</p>
+          }
+          <small class="muted">Atualizada em {{ task.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+        </div>
+        <div class="task-side">
+          <select
+            [value]="task.status"
+            (change)="changeStatus(task, $any($event.target).value)"
+            [attr.aria-label]="'Status de ' + task.title"
+          >
+            @for (s of statuses; track s) {
+              <option [value]="s">{{ labels[s] }}</option>
+            }
+          </select>
+          <div class="actions">
+            <button (click)="edit(task)">Editar</button>
+            <button class="danger" (click)="remove(task)">Excluir</button>
+          </div>
+        </div>
+      </li>
+    } @empty {
+      <li class="muted empty">Nenhuma tarefa encontrada.</li>
+    }
+  </ul>
+}
